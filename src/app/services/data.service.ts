@@ -9,23 +9,24 @@ import "rxjs/add/operator/map";
 @Injectable()
 export class DataService {
   private appId = "75b9a089c02b1908b7a99cd78d35ee01";
-  private dataSource = new BehaviorSubject<Object>({});
+  private dataSource = new BehaviorSubject<City>({});
+  private currentCity: City;
   public data = this.dataSource.asObservable();
-  private city: City;
 
   constructor(private http: HttpClient) {
     this.loadData();
   }
 
   loadCity(cityId: Number) {
-    this.loadData(cityId);
+    this.currentCity.id !== cityId && this.loadData(cityId);
   }
 
   refresh(city: City): void {
-    this.dataSource.next(city);
+    this.currentCity = city;
+    this.dataSource.next(this.currentCity);
   }
 
-  loadData(cityId: Number = 3832791): Observable<Object> {
+  loadData(cityId: Number = 3832780): Observable<City> {
     this.http
       .get(
         `https://api.openweathermap.org/data/2.5/forecast?id=${cityId}&appid=${
