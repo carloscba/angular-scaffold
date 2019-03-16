@@ -1,35 +1,47 @@
 import { Injectable } from "@angular/core";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { environment } from "../../environments/environment";
-import { Country } from "../models/country.model";
+import { City } from "../models/weather.model";
 import { Observable } from "rxjs";
+import { BehaviorSubject } from "rxjs/BehaviorSubject";
 import "rxjs/add/operator/map";
-import "rxjs/add/operator/take";
 
 @Injectable()
 export class DataService {
-  public countriesNumber = 0;
-  public countriesObservable: Observable<Country[]>;
-  private requestOptions = {
-    headers: new HttpHeaders({
-      "X-RapidAPI-Key": environment.RapidAPI
-    })
-  };
+  private appId = "75b9a089c02b1908b7a99cd78d35ee01";
+  private dataSource = new BehaviorSubject<Object>({});
+  public data = this.dataSource.asObservable();
+  private city: City;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.loadData();
+  }
 
-  get() {
-    return (this.countriesObservable = this.http
+  loadCity(cityId: Number) {
+    this.loadData(cityId);
+  }
+
+  refresh(city: City): void {
+    this.dataSource.next(city);
+  }
+
+  loadData(cityId: Number = 3832791): Observable<Object> {
+    this.http
       .get(
-        "https://skyscanner-skyscanner-flight-search-v1.p.rapidapi.com/apiservices/reference/v1.0/countries/es-ES",
-        this.requestOptions
+        `https://api.openweathermap.org/data/2.5/forecast?id=${cityId}&appid=${
+          this.appId
+        }`
       )
-      .map(
-        (data: Object[]): Country[] => {
-          return data.Countries.map(
-            country => new Country(country.Name, country.Code)
-          );
-        }
-      ));
+      .map(data => {
+        return new City(
+          data.city.id,
+          data.city.name,
+          data.city.coord,
+          data.city.country
+        );
+      })
+      .subscribe((data: City) => {
+        this.refresh(data);
+      });
   }
 }
